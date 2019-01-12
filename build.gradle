@@ -1,20 +1,29 @@
 apply plugin: 'com.android.library'
 
+ext {
+    appName = 'tagview'
+    appVersionCode = 1005
+    appVersionName = '1.0.5'
+}
+
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 27
-        versionCode rootProject.versionCode
-        versionName rootProject.versionName
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        targetSdkVersion 28
+        versionCode appVersionCode
+        versionName appVersionName
     }
+
     buildTypes {
         release {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
+    lintOptions {
+        abortOnError false
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -25,8 +34,7 @@ android {
     libraryVariants.all { variant ->
         variant.outputs.all { output ->
             if (outputFile != null && outputFileName.endsWith('.aar')) {
-                // outputFileName = "${archivesBaseName}-${version}.aar"
-                outputFileName = "${rootProject.appName}-${version}.aar"
+                outputFileName = "${appName}-${version}.aar"
             }
         }
     }
@@ -36,15 +44,12 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.0.2'
-    implementation 'com.android.support:support-v4:27.0.2'
-    implementation 'ir.afraapps:basic:1.0.7'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:support-v4:28.0.0'
 }
 
 
 apply from: 'publish.gradle'
 
-// in terminal: ./gradlew clean build bintrayUpload
+// ./gradlew :tagview:clean :tagview:build :tagview:bintrayUpload

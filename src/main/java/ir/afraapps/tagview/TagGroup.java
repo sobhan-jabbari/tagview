@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import ir.afraapps.basic.helper.UColor;
-import ir.afraapps.basic.helper.UTypeface;
-
 /**
  * Author: lujun(http://blog.lujun.co)
  * Date: 2015-12-30 17:14
@@ -136,11 +133,11 @@ public class TagGroup extends ViewGroup {
   /**
    * Preselected positions of the tagview
    */
-  private int[]        mPreselectedTags;
+  private int[] mPreselectedTags;
   /**
    * Tags
    */
-  private List<String> mTags;
+  private List<Tag> mTags;
 
   /**
    * Can drag TagView(default false)
@@ -182,16 +179,16 @@ public class TagGroup extends ViewGroup {
    */
   private int mTheme = ColorFactory.NONE;
 
-  private              int   mThemePresetPerpetual       = ColorFactory.PURE_CYAN;
-  private              int   mThemePresetPerpetualActive = ColorFactory.RANDOM;
+  private int mThemePresetPerpetual = ColorFactory.PURE_CYAN;
+  private int mThemePresetPerpetualActive = ColorFactory.RANDOM;
   /**
    * View theme default PURE_CYAN
    */
-  private              int   mThemeActive                = ColorFactory.NONE;
+  private int mThemeActive = ColorFactory.NONE;
   /**
    * Default interval(dp)
    */
-  private static final float DEFAULT_INTERVAL            = 5;
+  private static final float DEFAULT_INTERVAL = 5;
 
   /**
    * Default tagview min length
@@ -285,9 +282,9 @@ public class TagGroup extends ViewGroup {
       return new int[]{mTagBorderColor, mTagBackgroundColor, mTextColor};
     }
 
-    int borderColor = UColor.changeLightness(profile_normal[0], -0.2f);
-    int bgColor     = UColor.changeLightness(profile_normal[1], -0.2f);
-    int textColor   = UColor.setLightness(profile_normal[2], 0.9f);
+    int borderColor = TagUtil.changeLightness(profile_normal[0], -0.2f);
+    int bgColor = TagUtil.changeLightness(profile_normal[1], -0.2f);
+    int textColor = TagUtil.setLightness(profile_normal[2], 0.9f);
 
     return new int[]{borderColor, bgColor, textColor};
   }
@@ -298,9 +295,9 @@ public class TagGroup extends ViewGroup {
     super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
     measureChildren(widthMeasureSpec, heightMeasureSpec);
-    final int childCount    = getChildCount();
-    int       lines         = childCount == 0 ? 0 : getChildLines(childCount);
-    int       widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
+    final int childCount = getChildCount();
+    int lines = childCount == 0 ? 0 : getChildLines(childCount);
+    int widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
 //        int widthSpecMode = MeasureSpec.getMode(widthMeasureSpec);
     int heightSpecSize = MeasureSpec.getSize(heightMeasureSpec);
     int heightSpecMode = MeasureSpec.getMode(heightMeasureSpec);
@@ -329,10 +326,10 @@ public class TagGroup extends ViewGroup {
       return;
     }
     int availableW = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
-    int curRight   = getMeasuredWidth() - getPaddingRight();
-    int curTop     = getPaddingTop();
-    int curLeft    = getPaddingLeft();
-    int sPos       = 0;
+    int curRight = getMeasuredWidth() - getPaddingRight();
+    int curTop = getPaddingTop();
+    int curLeft = getPaddingLeft();
+    int sPos = 0;
     mViewPos = new int[childCount * 2];
 
     for (int i = 0; i < childCount; i++) {
@@ -409,20 +406,20 @@ public class TagGroup extends ViewGroup {
   public static class Builder {
     private int
       ic_company, ic_search, ic_back, ic_background,
-      tb_textsize             = 0, tb_title_color = 0, title_line_config = 1,
+      tb_textsize = 0, tb_title_color = 0, title_line_config = 1,
       animation_duration_logo = -1,
-      animation_duration      = -1;
+      animation_duration = -1;
     private Typeface typeface;
-    private String   title_default;
-    private boolean enable_logo_anim      = true;
+    private String title_default;
+    private boolean enable_logo_anim = true;
     private boolean save_title_navigation = false;
 
     public Builder() {
 
     }
 
-    public Builder setFontFace(@NonNull final String fontNameInFontFolder) {
-      typeface = UTypeface.getFromAsset(fontNameInFontFolder);
+    public Builder setFontFace(@NonNull Context mContext, @NonNull final String fontNameInFontFolder) {
+      typeface = TagUtil.getFromAsset(mContext, fontNameInFontFolder);
       return this;
     }
 
@@ -458,11 +455,11 @@ public class TagGroup extends ViewGroup {
 
   private int getChildLines(int childCount) {
     int availableW = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
-    int lines      = 1;
+    int lines = 1;
     for (int i = 0, curLineW = 0; i < childCount; i++) {
       View childView = getChildAt(i);
-      int  dis       = childView.getMeasuredWidth() + mHorizontalInterval;
-      int  height    = childView.getMeasuredHeight();
+      int dis = childView.getMeasuredWidth() + mHorizontalInterval;
+      int height = childView.getMeasuredHeight();
       mChildHeight = i == 0 ? height : Math.min(mChildHeight, height);
       curLineW += dis;
       if (curLineW - mHorizontalInterval > availableW) {
@@ -497,6 +494,14 @@ public class TagGroup extends ViewGroup {
       }
     }
     return colors;
+  }
+
+  private int[] onUpdateColorFactory(Tag tag) {
+    Log.i(TAG, "onUpdateColorFactory");
+    int borderColor = tag.getBorderColor() == -1 ? mTagBorderColor : tag.getBorderColor();
+    int backgroundColor = tag.getBackgroundColor() == -1 ? mTagBackgroundColor : tag.getBorderColor();
+    int textColor = tag.getTextColor() == -1 ? mTextColor : tag.getTextColor();
+    return new int[]{borderColor, backgroundColor, textColor};
   }
 
   private void onSetTag() {
@@ -557,12 +562,13 @@ public class TagGroup extends ViewGroup {
     }
   }
 
-  private void onAddTag(String text, int position) {
+  private void onAddTag(@NonNull Tag tag, int position) {
     if (position < 0 || position > mChildViews.size()) {
       throw new RuntimeException("Illegal position!");
     }
-    TagView tagView = new TagView(getContext(), text);
-    initTagView(tagView);
+    TagView tagView = new TagView(getContext(), tag);
+
+    initTagView(tagView, tag);
 
     mChildViews.add(position, tagView);
     if (position < mChildViews.size()) {
@@ -577,21 +583,27 @@ public class TagGroup extends ViewGroup {
     addView(tagView, position);
   }
 
-  private void initTagView(TagView tag) {
-    tag.applyProfile(onUpdateColorFactory(mTheme));
-    tag.setTagMaxLength(mTagMaxLength);
-    tag.setTypeface(mTypeface);
-    tag.setBorderWidth(mTagBorderWidth);
-    tag.setBorderRadius(mTagBorderRadius);
-    tag.setTextSize(mTextSize);
-    tag.setHorizontalPadding(mTagHorizontalPadding);
-    tag.setVerticalPadding(mTagVerticalPadding);
-    tag.setBdDistance(mTagBdDistance);
-    tag.setOnTagClickListener(mOnTagClickListener);
-    tag.setMode(mMode);
-    tag.setNotification(this);
-    tag.setItemDrawableStates(itemDrawable0, itemDrawable1, itemDrawable2);
-    tag.setItemDrawableHardStates(itemDrawable3, itemDrawable4, itemDrawable5);
+
+  private void initTagView(TagView tagView, Tag tag) {
+    //tag.applyProfile(onUpdateColorFactory(mTheme));
+    int[] profile = tag.hasSetColor() ? onUpdateColorFactory(tag) : onUpdateColorFactory(mTheme);
+    Drawable icon0 = tag.getItemDrawable0() == null ? itemDrawable0 : tag.getItemDrawable0();
+    Drawable icon1 = tag.getItemDrawable1() == null ? itemDrawable1 : tag.getItemDrawable1();
+    Drawable icon2 = tag.getItemDrawable2() == null ? itemDrawable2 : tag.getItemDrawable2();
+    tagView.applyProfile(profile);
+    tagView.setTagMaxLength(mTagMaxLength);
+    tagView.setTypeface(mTypeface);
+    tagView.setBorderWidth(mTagBorderWidth);
+    tagView.setBorderRadius(mTagBorderRadius);
+    tagView.setTextSize(mTextSize);
+    tagView.setHorizontalPadding(mTagHorizontalPadding);
+    tagView.setVerticalPadding(mTagVerticalPadding);
+    tagView.setBdDistance(mTagBdDistance);
+    tagView.setOnTagClickListener(mOnTagClickListener);
+    tagView.setMode(mMode);
+    tagView.setNotification(this);
+    tagView.setItemDrawableStates(icon0, icon1, icon2);
+    tagView.setItemDrawableHardStates(itemDrawable3, itemDrawable4, itemDrawable5);
   }
 
   private void processPreselectedOptionsOff(final int position, TagView tag) {
@@ -683,9 +695,9 @@ public class TagGroup extends ViewGroup {
     if (mChildViews.get(pos) instanceof TagView) {
       TagView cf = (TagView) mChildViews.get(pos);
       if (isShortClick) {
-        mOnTagClickListener.onTagClick(pos, cf.getText());
+        mOnTagClickListener.onTagClick(pos, cf.getTagObject());
       } else {
-        mOnTagClickListener.onTagLongClick(pos, cf.getText());
+        mOnTagClickListener.onTagLongClick(pos, cf.getTagObject());
       }
     }
     notifyInternal(pos);
@@ -721,11 +733,11 @@ public class TagGroup extends ViewGroup {
   }
 
   private int[] onGetNewPosition(View view) {
-    int left          = view.getLeft();
-    int top           = view.getTop();
+    int left = view.getLeft();
+    int top = view.getTop();
     int bestMatchLeft = mViewPos[(int) view.getTag() * 2];
-    int bestMatchTop  = mViewPos[(int) view.getTag() * 2 + 1];
-    int tmpTopDis     = Math.abs(top - bestMatchTop);
+    int bestMatchTop = mViewPos[(int) view.getTag() * 2 + 1];
+    int tmpTopDis = Math.abs(top - bestMatchTop);
     for (int i = 0; i < mViewPos.length / 2; i++) {
       if (Math.abs(top - mViewPos[i * 2 + 1]) < tmpTopDis) {
         bestMatchTop = mViewPos[i * 2 + 1];
@@ -733,7 +745,7 @@ public class TagGroup extends ViewGroup {
       }
     }
     int rowChildCount = 0;
-    int tmpLeftDis    = 0;
+    int tmpLeftDis = 0;
     for (int i = 0; i < mViewPos.length / 2; i++) {
       if (mViewPos[i * 2 + 1] == bestMatchTop) {
         if (rowChildCount == 0) {
@@ -791,14 +803,14 @@ public class TagGroup extends ViewGroup {
 
     @Override
     public int clampViewPositionHorizontal(@NonNull View child, int left, int dx) {
-      final int leftX  = getPaddingLeft();
+      final int leftX = getPaddingLeft();
       final int rightX = getWidth() - child.getWidth() - getPaddingRight();
       return Math.min(Math.max(left, leftX), rightX);
     }
 
     @Override
     public int clampViewPositionVertical(@NonNull View child, int top, int dy) {
-      final int topY    = getPaddingTop();
+      final int topY = getPaddingTop();
       final int bottomY = getHeight() - child.getHeight() - getPaddingBottom();
       return Math.min(Math.max(top, topY), bottomY);
     }
@@ -817,8 +829,8 @@ public class TagGroup extends ViewGroup {
     public void onViewReleased(@NonNull View releasedChild, float xvel, float yvel) {
       super.onViewReleased(releasedChild, xvel, yvel);
       requestDisallowInterceptTouchEvent(false);
-      int[] pos      = onGetNewPosition(releasedChild);
-      int   posRefer = onGetCoordinateReferPos(pos[0], pos[1]);
+      int[] pos = onGetNewPosition(releasedChild);
+      int posRefer = onGetCoordinateReferPos(pos[0], pos[1]);
       onChangeView(releasedChild, posRefer, (int) releasedChild.getTag());
       mViewDragHelper.settleCapturedViewAt(pos[0], pos[1]);
       invalidate();
@@ -858,7 +870,7 @@ public class TagGroup extends ViewGroup {
    *
    * @param tags the array of tags
    */
-  public void setTags(List<String> tags) {
+  public void setTags(List<Tag> tags) {
     mTags = tags;
     onSetTag();
   }
@@ -866,9 +878,9 @@ public class TagGroup extends ViewGroup {
   /**
    * Set tags
    *
-   * @param tags tags in string array
+   * @param tags tags in Tag array
    */
-  public void setTags(String... tags) {
+  public void setTags(Tag... tags) {
     mTags = Arrays.asList(tags);
     onSetTag();
   }
@@ -876,21 +888,24 @@ public class TagGroup extends ViewGroup {
   /**
    * Inserts the specified TagView into this ContainerLayout at the end.
    *
-   * @param text the string in tagview
+   * @param tag the string in tagview
    */
-  public void addTag(String text) {
-    addTag(text, mChildViews.size());
+  public void addTag(Tag tag) {
+    addTag(tag, mChildViews.size());
   }
 
   /**
    * Inserts the specified TagView into this ContainerLayout at the specified location.
    * The TagView is inserted before the current element at the specified location.
    *
-   * @param text     the string
+   * @param tag      the string
    * @param position the position
    */
-  public void addTag(String text, int position) {
-    onAddTag(text, position);
+  public void addTag(@NonNull Tag tag, int position) {
+    if (tag == null) {
+
+    }
+    onAddTag(tag, position);
     postInvalidate();
   }
 
@@ -1408,7 +1423,7 @@ public class TagGroup extends ViewGroup {
    * @param typeface as it is
    */
   public void setTypeface(String typeface) {
-    this.mTypeface = UTypeface.getFromAsset(typeface);
+    this.mTypeface = TagUtil.getFromAsset(getContext(), typeface);
   }
 
 

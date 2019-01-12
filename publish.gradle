@@ -2,17 +2,16 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
 
-version versionName
+version appVersionName
 group 'ir.afraapps'
 
 
 publishing {
     publications {
         Production(MavenPublication) {
-            // artifacts = ["${buildDir}/outputs/aar/${appName}-${this.version}.aar", sourcesJar]
-            artifact "${buildDir}/outputs/aar/${appName}-${this.version}.aar"
-            artifact sourcesJar
-            groupId this.group
+            // artifact("$buildDir/outputs/aar/app-release.aar")
+            artifacts = ["${buildDir}/outputs/aar/${appName}-${this.version}.aar", sourcesJar]
+            groupId
             artifactId appName
             version this.version
 
@@ -56,25 +55,20 @@ bintray {
     publications = ['Production']
     configurations = ['archives']
     override = true
-    filesSpec {
-        from 'app'
-        into 'app/tagview'
-    }
     pkg {
         repo = 'afraapps'
         name = appName
         description = "the tag view for android"
         publish = true
         publicDownloadNumbers = true
-        websiteUrl = 'https://github.com/sobhan-jabbari/TagView'
-        vcsUrl = 'https://github.com/sobhan-jabbari/TagView.git'
-        // dryRun = true
         licenses = ['Apache-2.0']
+        // vcsUrl = 'https://github.com/bintray/gradle-bintray-plugin.git'
+        // dryRun = true
         version {
             name = this.version
-            desc = "TagView ${this.version}"
+            desc = "${appName} ${this.version}"
             released = new Date()
-            vcsTag = "TagView ${this.version}"
+            vcsTag = "${appName} ${this.version}"
         }
     }
 }

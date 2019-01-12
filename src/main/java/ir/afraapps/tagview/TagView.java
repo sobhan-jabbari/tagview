@@ -18,6 +18,7 @@ import android.view.View;
  * Author: lujun(http://blog.lujun.co)
  * Date: 2015-12-31 11:47
  */
+@SuppressLint("ViewConstructor")
 public class TagView extends View {
 
   /**
@@ -99,8 +100,9 @@ public class TagView extends View {
   private Paint mPaint;
 
   private RectF mRectF;
-  private Rect  fontBound;
+  private Rect fontBound;
 
+  private Tag mTag;
   private String mAbstractText, mOriginText;
 
   private boolean isUp, isMoved, isExecLongClick;
@@ -124,22 +126,23 @@ public class TagView extends View {
         int state = ((TagGroup) getParent()).getTagViewState();
         if (state == ViewDragHelper.STATE_IDLE) {
           isExecLongClick = true;
-          mOnTagClickListener.onTagLongClick(getPosition(), getText());
+          mOnTagClickListener.onTagLongClick(getPosition(), mTag);
         }
       }
     }
   };
 
-  public TagView(Context context, String text) {
+  public TagView(Context context, Tag tag) {
     super(context);
-    init(text);
+    init(tag);
   }
 
-  private void init(String text) {
+  private void init(Tag tag) {
+    mTag = tag;
     mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     mRectF = new RectF();
     fontBound = new Rect();
-    mOriginText = text == null ? "" : text;
+    mOriginText = tag == null ? "" : tag.getText();
     preset_flag_on = flag_on = isViewClickable = false;
   }
 
@@ -270,8 +273,8 @@ public class TagView extends View {
   @Override
   public boolean dispatchTouchEvent(MotionEvent event) {
     if (isViewClickable) {
-      int y      = (int) event.getY();
-      int x      = (int) event.getX();
+      int y = (int) event.getY();
+      int x = (int) event.getX();
       int action = event.getAction();
       switch (action) {
         case MotionEvent.ACTION_DOWN:
@@ -299,8 +302,8 @@ public class TagView extends View {
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     if (isViewClickable && mOnTagClickListener != null) {
-      int x      = (int) event.getX();
-      int y      = (int) event.getY();
+      int x = (int) event.getX();
+      int y = (int) event.getY();
       int action = event.getAction();
       switch (action) {
         case MotionEvent.ACTION_DOWN:
@@ -331,7 +334,7 @@ public class TagView extends View {
           if (!isMoved) {
             if (System.currentTimeMillis() - register_down_time < mLongPressTime) {
               mNotification.notifyInternal(getPosition());
-              mOnTagClickListener.onTagClick(getPosition(), getText());
+              mOnTagClickListener.onTagClick(getPosition(), mTag);
             }
           }
 
@@ -346,6 +349,10 @@ public class TagView extends View {
     return mOriginText;
   }
 
+  public Tag getTagObject() {
+    return mTag;
+  }
+
   public boolean getIsViewClickable() {
     return isViewClickable;
   }
@@ -358,6 +365,7 @@ public class TagView extends View {
   private int getPosition() {
     return (int) getTag();
   }
+
 
   public void setOnTagClickListener(@Nullable OnTagClickListener listener) {
     this.mOnTagClickListener = listener;
@@ -412,9 +420,9 @@ public class TagView extends View {
   }
 
   public interface OnTagClickListener {
-    void onTagClick(int position, String text);
+    void onTagClick(int position, Tag tag);
 
-    void onTagLongClick(int position, String text);
+    void onTagLongClick(int position, Tag tag);
   }
 
   public void setTypeface(Typeface typeface) {
