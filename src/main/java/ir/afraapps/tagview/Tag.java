@@ -57,6 +57,24 @@ public class Tag<T> {
     this.backgroundColor = -1;
   }
 
+  public Tag(T tagObject, String text, int textColor, Drawable itemDrawable0) {
+    this.tagObject = tagObject;
+    this.text = text;
+    this.textColor = textColor;
+    this.borderColor = -1;
+    this.backgroundColor = -1;
+    this.itemDrawable0 = itemDrawable0;
+  }
+
+  public Tag(T tagObject, String text, Drawable itemDrawable0) {
+    this.tagObject = tagObject;
+    this.text = text;
+    this.itemDrawable0 = itemDrawable0;
+    this.textColor = -1;
+    this.borderColor = -1;
+    this.backgroundColor = -1;
+  }
+
   public T getTagObject() {
     return tagObject;
   }

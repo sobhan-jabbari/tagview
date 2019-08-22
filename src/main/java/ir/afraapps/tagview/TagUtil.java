@@ -2,10 +2,11 @@ package ir.afraapps.tagview;
 
 import android.content.Context;
 import android.graphics.Typeface;
-import android.support.annotation.ColorInt;
-import android.support.annotation.Nullable;
-import android.support.v4.graphics.ColorUtils;
+import androidx.annotation.ColorInt;
+import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
 import android.text.TextUtils;
+import android.util.TypedValue;
 
 public class TagUtil {
 
@@ -30,5 +31,9 @@ public class TagUtil {
   public static Typeface getFromAsset(Context context, @Nullable String fontName) {
     if (TextUtils.isEmpty(fontName)) return Typeface.DEFAULT;
     return Typeface.createFromAsset(context.getAssets(), fontName);
+  }
+
+  public static int toDIP(Context context, int size) {
+    return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, size, context.getResources().getDisplayMetrics());
   }
 }

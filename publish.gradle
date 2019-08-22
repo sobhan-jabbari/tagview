@@ -6,26 +6,34 @@ version appVersionName
 group 'ir.afraapps'
 
 
-publishing {
-    publications {
-        Production(MavenPublication) {
-            // artifact("$buildDir/outputs/aar/app-release.aar")
-            artifacts = ["${buildDir}/outputs/aar/${appName}-${this.version}.aar", sourcesJar]
-            groupId
-            artifactId appName
-            version this.version
+project.afterEvaluate {
+    publishing {
+        publications {
+            Production(MavenPublication) {
+                // artifact("$buildDir/outputs/aar/app-release.aar")
+                // artifacts = ["${buildDir}/outputs/aar/${appName}-${this.version}.aar", sourcesJar]
+                // artifact("${buildDir}/outputs/aar/${appName}-${this.version}.aar")
 
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
+                //groupId
+                artifactId appName
+                //version this.version
 
-                // Iterate over the implementation dependencies (we don't want the test ones), adding a <dependency> node for each
-                configurations.implementation.allDependencies.each {
-                    // Ensure dependencies such as fileTree are not included in the pom.
-                    if (it.name != 'unspecified') {
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
+                artifact bundleReleaseAar
+                //artifact androidJavadocsJar
+                //artifact androidSourcesJar
+
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+
+                    // Iterate over the implementation dependencies (we don't want the test ones), adding a <dependency> node for each
+                    configurations.implementation.allDependencies.each {
+                        // Ensure dependencies such as fileTree are not included in the pom.
+                        if (it.name != 'unspecified') {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                        }
                     }
                 }
             }
@@ -33,20 +41,25 @@ publishing {
     }
 }
 
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
+task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompile.classpath
+        }
+    }
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
     classifier = 'javadoc'
-    from javadoc.destinationDir
-    // options.encoding = 'UTF-8'
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
 }
 
 bintray {

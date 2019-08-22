@@ -8,10 +8,11 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.Nullable;
-import android.support.v4.widget.ViewDragHelper;
+import androidx.annotation.Nullable;
+import androidx.customview.widget.ViewDragHelper;
 import android.text.TextUtils;
 import android.view.MotionEvent;
+import android.view.SoundEffectConstants;
 import android.view.View;
 
 /**
@@ -91,6 +92,9 @@ public class TagView extends View {
    */
   private int mLongPressTime = 900;
 
+  private int iconSize;
+  private int iconPadding;
+
 
   /**
    * The distance between baseline and descent
@@ -100,6 +104,7 @@ public class TagView extends View {
   private Paint mPaint;
 
   private RectF mRectF;
+  private RectF iconBound;
   private Rect fontBound;
 
   private Tag mTag;
@@ -134,16 +139,19 @@ public class TagView extends View {
 
   public TagView(Context context, Tag tag) {
     super(context);
-    init(tag);
+    init(context, tag);
   }
 
-  private void init(Tag tag) {
+  private void init(Context context, Tag tag) {
     mTag = tag;
     mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     mRectF = new RectF();
+    iconBound = new RectF();
     fontBound = new Rect();
     mOriginText = tag == null ? "" : tag.getText();
     preset_flag_on = flag_on = isViewClickable = false;
+    iconSize = TagUtil.toDIP(context, 15);
+    iconPadding = TagUtil.toDIP(context, 4);
   }
 
   public void setNotification(TagGroup ly) {
@@ -216,57 +224,81 @@ public class TagView extends View {
   @Override
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    setMeasuredDimension(mHorizontalPadding * 2 + (int) textW, mVerticalPadding * 2 + (int) textH);
+    int iconWidth = background_drawable_0 == null ? 0 : iconPadding + iconSize;
+    //int iconWidth = background_drawable_0 == null ? 0 : (int) iconBound.width() + (iconPadding * 2);
+    setMeasuredDimension(mHorizontalPadding * 2 + (int) textW + iconWidth, mVerticalPadding * 2 + (int) Math.max(textH, iconSize));
   }
 
   @Override
   protected void onSizeChanged(int w, int h, int oldw, int oldh) {
     super.onSizeChanged(w, h, oldw, oldh);
     mRectF.set(mBorderWidth, mBorderWidth, w - mBorderWidth, h - mBorderWidth);
+    calculateIconBound(w, h);
   }
 
   private void setDrawableBound(Drawable d, Canvas c, RectF rec) {
-    d.setBounds((int) rec.left, (int) rec.top, (int) rec.right, (int) rec.bottom);
-    d.draw(c);
+    if (d != null) {
+      d.setBounds((int) rec.left, (int) rec.top, (int) rec.right, (int) rec.bottom);
+      d.draw(c);
+    }
+  }
+
+  public void setIconSize(int iconSize) {
+    this.iconSize = iconSize;
+    calculateIconBound(getWidth(), getHeight());
+    invalidate();
+  }
+
+  private void calculateIconBound(int w, int h) {
+    int nh = ((h - iconSize) / 2);
+    float left = w - mHorizontalPadding - iconSize;
+    iconBound.set(left, nh, left + iconSize, h - nh);
   }
 
   @Override
   protected void onDraw(Canvas canvas) {
     canvas.save();
-    if (!useDrawable) {
 
-      mPaint.setStyle(Paint.Style.FILL);
-      mPaint.setColor(mBackgroundColor);
+    mPaint.setStyle(Paint.Style.FILL);
+    mPaint.setTextAlign(Paint.Align.CENTER);
+    mPaint.setColor(mBackgroundColor);
+    canvas.drawRoundRect(mRectF, mBorderRadius, mBorderRadius, mPaint);
+
+    if (mBorderWidth > 0.0f) {
+      mPaint.setStyle(Paint.Style.STROKE);
+      mPaint.setStrokeWidth(mBorderWidth);
+      mPaint.setColor(mBorderColor);
       canvas.drawRoundRect(mRectF, mBorderRadius, mBorderRadius, mPaint);
-
-      if (mBorderWidth > 0.0f) {
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeWidth(mBorderWidth);
-        mPaint.setColor(mBorderColor);
-        canvas.drawRoundRect(mRectF, mBorderRadius, mBorderRadius, mPaint);
-      }
-
-    } else {
-      if (isFlag_on()) {
-        if (isPresetFlag_on()) {
-          setDrawableBound(background_drawable_4, canvas, mRectF);
-        } else {
-          setDrawableBound(background_drawable_1, canvas, mRectF);
-        }
-      } else {
-        if (isPresetFlag_on()) {
-          setDrawableBound(background_drawable_3, canvas, mRectF);
-        } else {
-          setDrawableBound(background_drawable_0, canvas, mRectF);
-        }
-      }
-
     }
+
+    if (isFlag_on()) {
+      if (isPresetFlag_on()) {
+        setDrawableBound(background_drawable_4, canvas, iconBound);
+      } else {
+        setDrawableBound(background_drawable_1, canvas, iconBound);
+      }
+    } else {
+      if (isPresetFlag_on()) {
+        setDrawableBound(background_drawable_3, canvas, iconBound);
+      } else {
+        setDrawableBound(background_drawable_0, canvas, iconBound);
+      }
+    }
+
 
     mPaint.setStyle(Paint.Style.FILL);
     mPaint.setColor(mTextColor);
 
-    canvas.drawText(mAbstractText, getWidth() / 2 - textW / 2, getHeight() / 2 + fontH / 2 + bdDistance, mPaint);
+    if (background_drawable_0 == null) {
+      mPaint.setTextAlign(Paint.Align.CENTER);
+      // canvas.drawText(mAbstractText, getWidth() / 2f - textW / 2, getHeight() / 2f + fontH / 2 + bdDistance, mPaint);
+      canvas.drawText(mAbstractText, getWidth() / 2f, getHeight() / 2f + fontH / 2 + bdDistance, mPaint);
+
+    } else {
+      mPaint.setTextAlign(Paint.Align.RIGHT);
+      canvas.drawText(mAbstractText, iconBound.left - iconPadding, getHeight() / 2f + fontH / 2 + bdDistance, mPaint);
+    }
+
     canvas.restore();
   }
 
@@ -334,6 +366,7 @@ public class TagView extends View {
           if (!isMoved) {
             if (System.currentTimeMillis() - register_down_time < mLongPressTime) {
               mNotification.notifyInternal(getPosition());
+              playSoundEffect(SoundEffectConstants.CLICK);
               mOnTagClickListener.onTagClick(getPosition(), mTag);
             }
           }
@@ -419,10 +452,10 @@ public class TagView extends View {
     this.mVerticalPadding = padding;
   }
 
-  public interface OnTagClickListener {
-    void onTagClick(int position, Tag tag);
+  public interface OnTagClickListener<T> {
+    void onTagClick(int position, Tag<T> tag);
 
-    void onTagLongClick(int position, Tag tag);
+    void onTagLongClick(int position, Tag<T> tag);
   }
 
   public void setTypeface(Typeface typeface) {
